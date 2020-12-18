@@ -7,8 +7,6 @@ import os
 import numpy as np
 import scipy.io as sio
 import torch
-print("Hello Germany")
-
 
 tform = transform.SimilarityTransform(rotation=0.00174)
 
