@@ -7,6 +7,7 @@ import dataset
 import engine
 from Dense_Unet import Dense_Unet
 
+print("hello world")
 
 if __name__ == "__main__":
 
