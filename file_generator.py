@@ -3,10 +3,10 @@ import json
 import numpy as np
 
 
-DATASET_DIR = '/home/chauhan/thesis/Dataset/'
+DATASET_DIR = '/thesis/dataset/'
 GT_DIR = os.path.join(DATASET_DIR, 'ground_truth')
-MEAS_DIR = os.path.join(DATASET_DIR, 'mes_pt_1')
-
+MEAS_DIR = os.path.join(DATASET_DIR, 'measurements')
+count
 print(GT_DIR)
 print(MEAS_DIR)
 

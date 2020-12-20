@@ -104,9 +104,9 @@ class outconv(nn.Module):
         return x
 
 
-class FlatNet(nn.Module):
+class Dense_Unet(nn.Module):
     def __init__(self, n_channels=4):
-        super(FlatNet, self).__init__()
+        super(Dense_Unet, self).__init__()
         self.inc = inconv(n_channels, 128)
         self.down1 = down(128, 256)
         self.down2 = down(256, 512)
@@ -146,3 +146,9 @@ class FlatNet(nn.Module):
         x = self.outc(x)
 
         return torch.sigmoid(x)
+
+if __name__ == "__main__":
+    model = Dense_Unet()
+    input_image = torch.rand(size = (1, 4, 500, 620))
+    out = model(input_image)
+    print(out.shape)

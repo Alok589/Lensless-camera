@@ -19,7 +19,7 @@ def train(data_loader, model, optimizer, device):
 
 
 # go over every batch of data in data loader
-for data in data_loader:
+for data in tqdm(data_loader):
     # remember, we have image and targets
     # in our dataset class
     inputs = data["image"]
@@ -32,7 +32,7 @@ optimizer.zero_grad()
 # do the forward step of model
 outputs = model(inputs)
 # calculate loss
-loss = nn.BCEWithLogitsLoss()(outputs, targets.view(-1, 1))
+loss = nn.MSELoss()(outputs, targets)
 # backward step the loss
 loss.backward()
 # step optimizer
