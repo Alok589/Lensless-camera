@@ -9,6 +9,7 @@ from torch.optim import lr_scheduler
 from Dense_Unet import Dense_Unet
 from PIL import Image
 import cv2
+import engine
 
 
 if __name__ == "__main__":
@@ -18,10 +19,10 @@ if __name__ == "__main__":
     file_name = "file_name.txt"
 
     # cuda/cpu device
-    device = "cuda"
+    device = "cuda:7"
     # let's train for 10 epochs
     epochs = 10
-    model = Dense_Unet
+    #model = Dense_Unet
     # load the dataframe
     # df = pd.read_csv(os.path.join(data_path, "train.csv"))
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     )
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=16, shuffle=True, num_workers=4)
+        train_dataset, batch_size=4, shuffle=True, num_workers=2)
 
     valid_dataset = dataset.ClassificationDataset(
         image_paths=val_X,
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         resize=(256, 256)
     )
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=16, shuffle=False, num_workers=4)
+        valid_dataset, batch_size=1, shuffle=False, num_workers=1)
 
     test_dataset = dataset.ClassificationDataset(
         image_paths=test_X,
@@ -72,22 +73,22 @@ if __name__ == "__main__":
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=16,
+        batch_size=2,
         shuffle=False,
-        num_workers=4
+        num_workers=1
     )
-
+    data = train_dataset[23]
 
     # simple Adam optimizer
-    optimizer=torch.optim.Adam(model.parameters(), lr=5e-4)
-    scheduler=lr_scheduler.ReduceLROnPlateau(
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
+    scheduler = lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", patience=3, verbose=True)
     # train and print auc score for all epochs^
 
     for epoch in range(epochs):
         engine.train(train_loader, model, optimizer, device=device)
-        # predictions, valid_targets = engine.evaluate(
-        #     valid_loader, model, device=device)
+        predictions, valid_targets = engine.evaluate(
+            valid_loader, model, device=device)
     # wrap model and optimizer with NVIDIA's apex
     # this is used for mixed precision training
     # if you have a GPU that supports mixed precision,
@@ -97,9 +98,9 @@ if __name__ == "__main__":
 #     model, optimizer, opt_level="O1", verbosity=0
 #     )
 # if we have more than one GPU, we can use both of them!
-if torch.cuda.device_count() > 1:
-    print(f"Let's use {torch.cuda.device_count()} GPUs!")
-    model=nn.DataParallel(model)
+# if torch.cuda.device_count() > 1:
+#     print(f"Let's use {torch.cuda.device_count()} GPUs!")
+#     model = nn.DataParallel(model)
 # some logging
     # print(f"Training batch size: {TRAINING_BATCH_SIZE}")
     # print(f"Test batch size: {TEST_BATCH_SIZE}")
