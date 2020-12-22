@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 from sklearn import metrics
+import matplotlib.pyplot as plt 
 from sklearn.model_selection import train_test_split
 import dataset
 import torch.optim as optim
@@ -17,6 +18,7 @@ if __name__ == "__main__":
     project_path = '/thesis/'
     data_path = "/thesis/dataset/"
     file_name = "file_name.txt"
+    
 
     # cuda/cpu device
     device = "cuda:7"
@@ -85,10 +87,25 @@ if __name__ == "__main__":
         optimizer, mode="min", patience=3, verbose=True)
     # train and print auc score for all epochs^
 
+    train_losses = []
+    val_losses = []
     for epoch in range(epochs):
-        engine.train(train_loader, model, optimizer, device=device)
-        predictions, valid_targets = engine.evaluate(
+        train_loss = engine.train(train_loader, model, optimizer, device=device)
+        val_loss = engine.evaluate(
             valid_loader, model, device=device)
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+
+    plt.figure()
+    plt.plot(list(range(1, epochs+1)), train_losses, label = "train")
+    plt.plot(list(range(1, epochs+1)), val_losses, label = "val")
+    plt.legend()
+
+    plt.savefig()
+
+
+
+
     # wrap model and optimizer with NVIDIA's apex
     # this is used for mixed precision training
     # if you have a GPU that supports mixed precision,
