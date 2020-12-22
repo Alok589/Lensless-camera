@@ -18,17 +18,14 @@ if __name__ == "__main__":
     project_path = '/thesis/'
     data_path = "/thesis/dataset/"
     file_name = "file_name.txt"
-    
+    loss_curves  = os.path.join(project_path, "loss_curves")
+    models_weights = os.path.join(project_path, "models_weights")
 
-    # cuda/cpu device
-    device = "cuda:7"
-    # let's train for 10 epochs
-    epochs = 10
-    #model = Dense_Unet
-    # load the dataframe
-    # df = pd.read_csv(os.path.join(data_path, "train.csv"))
+    exp = "exp_2"
+    device = "cuda:5"
+    epochs = 3
 
-    # load the files
+
     with open(file_name, "r") as f:
         file_names = f.read()[:-1].split('\n')
 
@@ -52,8 +49,8 @@ if __name__ == "__main__":
     model.to(device)
 
     train_dataset = dataset.ClassificationDataset(
-        image_paths=train_X[:30],
-        targets=train_Y[:30],
+        image_paths=train_X[:10],
+        targets=train_Y[:10],
         resize=(256, 256)
     )
 
@@ -61,8 +58,8 @@ if __name__ == "__main__":
         train_dataset, batch_size=4, shuffle=True, num_workers=2)
 
     valid_dataset = dataset.ClassificationDataset(
-        image_paths=val_X,
-        targets=val_Y,
+        image_paths=val_X[:10],
+        targets=val_Y[:10],
         resize=(256, 256)
     )
     valid_loader = torch.utils.data.DataLoader(
@@ -79,7 +76,7 @@ if __name__ == "__main__":
         shuffle=False,
         num_workers=1
     )
-    data = train_dataset[23]
+    #data = train_dataset[23]
 
     # simple Adam optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
@@ -96,12 +93,14 @@ if __name__ == "__main__":
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
+    torch.save(model.state_dict(), os.path.join(models_weights, exp+".pt"))    
+
     plt.figure()
     plt.plot(list(range(1, epochs+1)), train_losses, label = "train")
     plt.plot(list(range(1, epochs+1)), val_losses, label = "val")
     plt.legend()
 
-    plt.savefig()
+    plt.savefig(os.path.join(loss_curves, exp+".png"))
 
 
 
