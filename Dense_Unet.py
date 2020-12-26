@@ -7,6 +7,7 @@ import os
 import numpy as np
 import scipy.io as sio
 import torch
+from torch.optim import optimizer
 
 tform = transform.SimilarityTransform(rotation=0.00174)
 
@@ -94,6 +95,21 @@ class up(nn.Module):
         return x
 
 
+class upnocat(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(upnocat, self).__init__()
+
+        self.up = nn.Upsample(
+            scale_factor=2, mode='bilinear', align_corners=True)
+
+        self.conv = double_conv(in_ch, out_ch)
+
+    def forward(self, x):
+        x = self.up(x)
+        x = self.conv(x)
+        return x
+
+
 class outconv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(outconv, self).__init__()
@@ -145,10 +161,11 @@ class Dense_Unet(nn.Module):
         x = self.up4(x, x1)
         x = self.outc(x)
 
-        return torch.sigmoid(x)
+        return x
+
 
 if __name__ == "__main__":
     model = Dense_Unet()
-    input_image = torch.rand(size = (1, 4, 500, 620))
+    input_image = torch.rand(size=(1, 4, 500, 620))
     out = model(input_image)
     print(out.shape)

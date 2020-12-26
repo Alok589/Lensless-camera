@@ -2,15 +2,21 @@ import os
 import numpy as np
 import torch
 from sklearn import metrics
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import dataset
 import torch.optim as optim
-from torch.optim import lr_scheduler
+from torch.optim import lr_scheduler, optimizer
 from Dense_Unet import Dense_Unet
 from PIL import Image
 import cv2
 import engine
+from torch.optim.lr_scheduler import StepLR
+from torch import nn
+from torch.utils.tensorboard import SummaryWriter
+import torchvision
+import sys
+from torch.hub import tqdm
 
 
 if __name__ == "__main__":
@@ -18,13 +24,12 @@ if __name__ == "__main__":
     project_path = '/thesis/'
     data_path = "/thesis/dataset/"
     file_name = "file_name.txt"
-    loss_curves  = os.path.join(project_path, "loss_curves")
+    loss_curves = os.path.join(project_path, "loss_curves")
     models_weights = os.path.join(project_path, "models_weights")
 
-    exp = "exp_2"
+    exp = "exp_7"
     device = "cuda:5"
-    epochs = 3
-
+    epochs = 50
 
     with open(file_name, "r") as f:
         file_names = f.read()[:-1].split('\n')
@@ -35,7 +40,7 @@ if __name__ == "__main__":
                             0], file+'.JPEG') for file in file_names]
 
     train_X, test_X, train_Y, test_Y = train_test_split(
-        meas_data, gt_data, test_size=0.25)
+        meas_data, gt_data, test_size=0.20)
 
     train_X, val_X, train_Y, val_Y = train_test_split(
         train_X, train_Y, test_size=0.15)
@@ -49,21 +54,21 @@ if __name__ == "__main__":
     model.to(device)
 
     train_dataset = dataset.ClassificationDataset(
-        image_paths=train_X[:10],
-        targets=train_Y[:10],
+        image_paths=train_X,
+        targets=train_Y,
         resize=(256, 256)
     )
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=4, shuffle=True, num_workers=2)
+        train_dataset, batch_size=8, shuffle=True, num_workers=2)
 
     valid_dataset = dataset.ClassificationDataset(
-        image_paths=val_X[:10],
-        targets=val_Y[:10],
+        image_paths=val_X,
+        targets=val_Y,
         resize=(256, 256)
     )
     valid_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=1, shuffle=False, num_workers=1)
+        valid_dataset, batch_size=8, shuffle=False, num_workers=2)
 
     test_dataset = dataset.ClassificationDataset(
         image_paths=test_X,
@@ -72,38 +77,57 @@ if __name__ == "__main__":
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=2,
+        batch_size=4,
         shuffle=False,
-        num_workers=1
+        num_workers=2
     )
+    #writer = SummaryWriter("runs/")
+    # examples = iter(train_loader)
+    # example_data, examples_targets = examples.next()
+    # img_grid = torchvision.utils.make_grid(example_data)
+    # writer.add_image = ('meas_images', img_grid)
+    # writer.add_graph(model, example_data)
+    # writer.close()
+    # sys.exit()
+
+    # tb = SummaryWriter()
+    # model = Dense_Unet()
+    # images_batch = torch.from_numpy(np.array(train_X, dtype='int32'))
+    # images = next(iter(images_batch))
+
+    # grid = torchvision.utils.make_grid(images)
+    # tb.add_images('images', grid)
+    # tb.add_graph(model, images)
+    # tb.close()
     #data = train_dataset[23]
 
     # simple Adam optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
-    scheduler = lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", patience=3, verbose=True)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=1e-3)
+
+    # scheduler = lr_scheduler.ReduceLROnPlateau(
+    #     optimizer, mode="min", patience=3, verbose=True, factor=0.2)
     # train and print auc score for all epochs^
 
     train_losses = []
     val_losses = []
-    for epoch in range(epochs):
-        train_loss = engine.train(train_loader, model, optimizer, device=device)
+    for epoch in tqdm(range(epochs)):
+        print('epoch '+str(epoch))
+        train_loss = engine.train(
+            train_loader, model, optimizer, device=device)
         val_loss = engine.evaluate(
             valid_loader, model, device=device)
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-    torch.save(model.state_dict(), os.path.join(models_weights, exp+".pt"))    
+    torch.save(model.state_dict(), os.path.join(models_weights, exp+".pt"))
 
     plt.figure()
-    plt.plot(list(range(1, epochs+1)), train_losses, label = "train")
-    plt.plot(list(range(1, epochs+1)), val_losses, label = "val")
+    plt.plot(list(range(1, epochs+1)), train_losses, label="train")
+    plt.plot(list(range(1, epochs+1)), val_losses, label="val")
     plt.legend()
 
     plt.savefig(os.path.join(loss_curves, exp+".png"))
-
-
-
 
     # wrap model and optimizer with NVIDIA's apex
     # this is used for mixed precision training
@@ -115,8 +139,9 @@ if __name__ == "__main__":
 #     )
 # if we have more than one GPU, we can use both of them!
 # if torch.cuda.device_count() > 1:
+
 #     print(f"Let's use {torch.cuda.device_count()} GPUs!")
-#     model = nn.DataParallel(model)
+#     model = nn.DataParallel(model, device_ids=[1, 2, 3])
 # some logging
     # print(f"Training batch size: {TRAINING_BATCH_SIZE}")
     # print(f"Test batch size: {TEST_BATCH_SIZE}")

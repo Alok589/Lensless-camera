@@ -1,2 +1,5 @@
 /dataset
 /.vscode
+/loss_curves
+/models_weights
+/inference_plots
